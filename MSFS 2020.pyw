@@ -28,7 +28,8 @@ folder_path = 'F:\\MSFS 2020\\Mods\\Apps and stuff'  # Change this to your folde
 file1 = os.path.join(folder_path, 'FsPanelServer.exe')
 file2 = os.path.join(folder_path, 'MSFS_MCA_v1-9-1.exe')
 file3 = os.path.join(folder_path, 'MSFSPopoutPanelManager.exe')
-file4 = os.path.join("F:\\MSFS 2020\\Community\\fsltl-traffic-injector", 'fsltl-trafficinjector.exe')
+trafficinjectorfile4 = os.path.join("F:\\MSFS 2020\\Community\\fsltl-traffic-injector", 'fsltl-trafficinjector.exe')
+simdashboard = os.path.join('C:\\Program Files (x86)\\SIMDashboardServer', 'SIMDashboardServer.exe')
 folder_to_open = 'F:\\MSFS 2020'  # Change this to your folder path
 steam_url = 'steam://rungameid/1250410'
 
@@ -44,10 +45,25 @@ def open_file2():
 
 def open_file3():
     subprocess.Popen([file3])
+    
+def is_injector_not_running():
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if proc.info['name'] == 'cmd.exe':
+                cmdline_str = ' '.join(proc.info['cmdline'])
+               #print(f"Checking process: {cmdline_str}")  # Debug statement
+                if 'fsltl-trafficinjector.exe' in cmdline_str:
+                    #print("Injector is already running")  # Debug statement
+                    return False
+        except (psutil.NoSuchProcess, KeyError):
+            continue
+    #print("Injector is not running")  # Debug statement
+    return True
 
 # Function to open file4 in a new terminal window
 def open_file4():
-    subprocess.Popen(['start', 'cmd.exe', '/k', file4], shell=True)
+    if is_injector_not_running():
+        subprocess.Popen(['start', 'cmd.exe', '/k', trafficinjectorfile4], shell=True)
     
 
 # Function to open a folder in the file explorer
@@ -57,6 +73,9 @@ def open_folder():
     elif os.name == 'posix':  # macOS and Linux
         subprocess.Popen(['open', folder_to_open])  # For macOS
         # subprocess.Popen(['xdg-open', folder_to_open])  # For Linux
+        
+def open_sim_dashboard():
+    subprocess.Popen([simdashboard])
         
 # Function to move the mouse to a specific position and perform a left-click
 def move_and_click(x, y):
@@ -70,6 +89,12 @@ y_coordinate = 200
 # Call the function to move the mouse and click
 move_and_click(x_coordinate, y_coordinate)
 
+def is_msfs_not_running():
+    for proc in psutil.process_iter(['name']):
+        if proc.info['name'] == 'FlightSimulator.exe':
+            return False
+    return True
+
 def is_steam_running():
     for proc in psutil.process_iter(['name']):
         if proc.info['name'] == 'steam.exe':
@@ -78,7 +103,8 @@ def is_steam_running():
         
 def open_steam_game():
     if is_steam_running():
-        webbrowser.open(steam_url)
+        if is_msfs_not_running():
+            webbrowser.open(steam_url)
     else:
         webbrowser.open(steam_url)
         steam_window = None
@@ -125,6 +151,7 @@ def close_app(name_of_app, x, y):
     time.sleep(1)
     pyautogui.click()
     
+    
 
 # Create the main window
 root = tk.Tk()
@@ -132,7 +159,7 @@ root.title("MSFS Launchers")
 
 # Set window size
 window_width = 300
-window_height = 300
+window_height = 400
 root.geometry(f"{window_width}x{window_height}")
 
 # Get screen information
@@ -163,6 +190,7 @@ btn_file3 = tk.Button(root, text="Msfs Pop out manager", command=open_file3)
 btn_file4 = tk.Button(root, text="FSLTL Traffic", command=open_file4)
 btn_open_folder = tk.Button(root, text="Open Folder", command=open_folder)
 btn_steam_game = tk.Button(root, text="Microsoft Flight Simulator", command=open_steam_game)
+btn_sim_dashboard = tk.Button(root, text="Sim Dashboard", command=open_sim_dashboard)
 
 # Pack buttons
 btn_file1.pack(pady=5)
@@ -170,7 +198,9 @@ btn_file2.pack(pady=5)
 btn_file3.pack(pady=5)
 btn_file4.pack(pady=5)
 btn_open_folder.pack(pady=5)
+btn_sim_dashboard.pack(pady=5)
 btn_steam_game.pack(pady=10)
+
 
 # Run the Tkinter event loop
 open_file4()
